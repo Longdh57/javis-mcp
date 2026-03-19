@@ -1,17 +1,36 @@
+import os
+import uvicorn
+from dotenv import load_dotenv
+
+load_dotenv()
 from mcp.server.fastmcp import FastMCP
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 mcp = FastMCP(
-    name="mcp-server",
+    name="javis-mcp-server",
     host="0.0.0.0",
     port=8000,
 )
 
+AUTH_TOKEN = os.environ.get("MCP_AUTH_TOKEN", "123456789")  # Default token for testing, should be set in .env for production
+
+
+class TokenAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path == "/":
+            return await call_next(request)
+        if AUTH_TOKEN:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer ") or auth_header[7:] != AUTH_TOKEN:
+                return JSONResponse({"error": "Unauthorized"}, status_code=401)
+        return await call_next(request)
+
 
 @mcp.custom_route("/", methods=["GET"])
 async def root(request: Request) -> JSONResponse:
-    return JSONResponse({"message": "MCP Server is running", "name": "mcp-server"})
+    return JSONResponse({"message": "Javis MCP Server is running", "name": "mcp-server"})
 
 
 @mcp.tool(description="Add two integers together and return the sum.")
@@ -40,5 +59,6 @@ def review_sentence(sentence: str) -> str:
 
 
 if __name__ == "__main__":
-    # Run as streamable-http so Claude Terminal can connect via --transport http
-    mcp.run(transport="streamable-http")
+    app = mcp.streamable_http_app()
+    app.add_middleware(TokenAuthMiddleware)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
