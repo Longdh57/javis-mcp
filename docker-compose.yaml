@@ -1,0 +1,6 @@
+services:
+  mcp-server:
+    image: ghcr.io/longdh57/javis-mcp:latest
+    ports:
+      - "8051:8000"
+    restart: unless-stopped
