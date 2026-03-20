@@ -1,3 +1,4 @@
 mcp[cli]
 openai-agents
 python-dotenv
+httpx

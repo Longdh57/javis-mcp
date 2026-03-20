@@ -14,6 +14,12 @@ mcp = FastMCP(
     port=8000,
 )
 
+try:
+    from trello_tools import register_trello_tools
+    register_trello_tools(mcp)
+except ImportError:
+    print("trello_tools.py not found — run: python generate_trello_tools.py")
+
 AUTH_TOKEN = os.environ.get("MCP_AUTH_TOKEN", "123456789")  # Default token for testing, should be set in .env for production
 
 
